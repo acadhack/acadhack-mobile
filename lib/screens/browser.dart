@@ -76,7 +76,7 @@ class _BrowserScreenState extends State<BrowserScreen> {
     }
   }
 
-  void _initWebView() {
+  void _initWebView() async {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFF121212))
@@ -152,6 +152,17 @@ class _BrowserScreenState extends State<BrowserScreen> {
       (_controller.platform as AndroidWebViewController)
           .setMediaPlaybackRequiresUserGesture(false);
     }
+
+    // Enable Cookie Persistence (So login persists across app restarts)
+    final cookieManager = WebViewCookieManager();
+    // Accept cookies from all sources
+    await cookieManager.setCookie(
+      const WebViewCookie(
+        name: '_session_persist',
+        value: 'enabled',
+        domain: '.acadally.com',
+      ),
+    );
 
     _controller.loadRequest(
       Uri.parse('https://app.acadally.com/login/student'),
