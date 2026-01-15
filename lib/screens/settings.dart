@@ -17,7 +17,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   bool _stealthMode = false;
   bool _darkMode = true;
-  bool _boosterMode = false;
   bool _guessMode = false;
   String _guessOption = 'A';
 
@@ -46,7 +45,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       _stealthMode = config.isStealthMode;
       _darkMode = config.isDarkMode;
-      _boosterMode = config.isBoosterMode;
       _guessMode = config.isGuessMode;
       _guessOption = config.guessOption;
 
@@ -70,7 +68,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     await config.setStealthMode(_stealthMode);
     await config.setDarkMode(_darkMode);
-    await config.setBoosterMode(_boosterMode);
     await config.setGuessMode(_guessMode);
     await config.setGuessOption(_guessOption);
 
@@ -135,13 +132,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onChanged: (val) => setState(() => _stealthMode = val),
           ),
           if (_stealthMode) _buildDelayInputs(),
-
-          SwitchListTile(
-            title: const Text('Quiz Booster'),
-            subtitle: const Text('High-speed solving (Caution)'),
-            value: _boosterMode,
-            onChanged: (val) => setState(() => _boosterMode = val),
-          ),
 
           SwitchListTile(
             title: const Text('Guess Mode'),

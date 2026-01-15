@@ -219,11 +219,6 @@ class _BrowserScreenState extends State<BrowserScreen> {
           setState(() => _statusText = "Stealth: ${delay.toStringAsFixed(1)}s");
         }
 
-        // Booster Override
-        if (_config?.isBoosterMode ?? false) {
-          delay = 0.2;
-        }
-
         await Future.delayed(Duration(milliseconds: (delay * 1000).toInt()));
 
         // --- SOLVING ---

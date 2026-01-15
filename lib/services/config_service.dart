@@ -12,13 +12,15 @@ class ConfigService {
 
   // === Getters ===
   String? get apiKey => _prefs.getString(keyApiKey);
-  String get modelName => _prefs.getString(keyModelName) ?? 'gemini-1.5-flash';
+  String get modelName =>
+      _prefs.getString(keyModelName) ?? 'gemini-3-flash-preview';
   bool get isStealthMode => _prefs.getBool(keyStealthMode) ?? false;
   bool get isDarkMode => _prefs.getBool(keyDarkMode) ?? true;
 
   // New Features
-  double get rateLimit => _prefs.getDouble('rate_limit') ?? 2.0; // Seconds
-  bool get isBoosterMode => _prefs.getBool('booster_mode') ?? false;
+  double get rateLimit =>
+      _prefs.getDouble('rate_limit') ??
+      12.0; // Seconds (5 req/min on free tier)
 
   // Guess Mode
   bool get isGuessMode => _prefs.getBool('guess_mode') ?? false;
@@ -41,8 +43,6 @@ class ConfigService {
 
   Future<void> setRateLimit(double value) async =>
       await _prefs.setDouble('rate_limit', value);
-  Future<void> setBoosterMode(bool value) async =>
-      await _prefs.setBool('booster_mode', value);
 
   Future<void> setGuessMode(bool value) async =>
       await _prefs.setBool('guess_mode', value);
