@@ -123,21 +123,24 @@ class _BrowserScreenState extends State<BrowserScreen> {
               });
             }
 
-            // 2. SPA/Redirect Fail-Safe: Re-inject login logic if on Login Page
-            // This fixes the "Stuck" issue if onPageFinished doesn't fire.
-            if (_isLoggingIn &&
-                change.url!.contains('/login') &&
-                _tempUser != null) {
-              print("Detected Login Page via URL Change - Force Injecting...");
-              Future.delayed(const Duration(seconds: 1), () async {
-                await _injectScripts();
+            // 2. SPA/Redirect Fail-Safe: Re-inject logic on every URL change
+            // This ensures injector.js is present after Next.js client-side navigation.
+            Future.delayed(const Duration(milliseconds: 500), () async {
+              await _injectScripts();
+
+              if (_isLoggingIn &&
+                  change.url!.contains('/login') &&
+                  _tempUser != null) {
+                print(
+                  "Detected Login Page via URL Change - Force Injecting...",
+                );
                 final u = jsonEncode(_tempUser);
                 final p = jsonEncode(_tempPass);
                 await _controller.runJavaScript(
                   "if(window.AcadHackAuth) window.AcadHackAuth.login($u, $p);",
                 );
-              });
-            }
+              }
+            });
           },
         ),
       )
@@ -146,23 +149,13 @@ class _BrowserScreenState extends State<BrowserScreen> {
         onMessageReceived: _handleJsMessage,
       );
 
-    // Enable Remote Debugging (Moved after init)
+    // Platform specific configurations
     if (_controller.platform is AndroidWebViewController) {
       AndroidWebViewController.enableDebugging(true);
-      (_controller.platform as AndroidWebViewController)
-          .setMediaPlaybackRequiresUserGesture(false);
+      final androidController =
+          _controller.platform as AndroidWebViewController;
+      await androidController.setMediaPlaybackRequiresUserGesture(false);
     }
-
-    // Enable Cookie Persistence (So login persists across app restarts)
-    final cookieManager = WebViewCookieManager();
-    // Accept cookies from all sources
-    await cookieManager.setCookie(
-      const WebViewCookie(
-        name: '_session_persist',
-        value: 'enabled',
-        domain: '.acadally.com',
-      ),
-    );
 
     _controller.loadRequest(
       Uri.parse('https://app.acadally.com/login/student'),

@@ -4,14 +4,17 @@
  */
 
 (function () {
-    // console.log("AcadHack Injector Loaded");
+    console.log("AcadHack Injector Loaded 💉");
 
     const channel = window.AcadHackChannel;
 
     // === Helpers ===
     function log(msg) {
+        console.log("AH_LOG: " + msg);
         if (channel) channel.postMessage(JSON.stringify({ type: 'LOG', message: msg }));
     }
+
+    log("Injector Initialized");
 
     function extractOptions(cards) {
         return Array.from(cards).map((card, index) => {
