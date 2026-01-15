@@ -15,16 +15,17 @@
 
     function extractOptions(cards) {
         return Array.from(cards).map((card, index) => {
-            // New Selector (from config.py/scraper.py): 
-            // label_el = card.find_element(By.CLASS_NAME, config.OPTION_LABEL_CLASS)
-            // content_element = card.find_element(By.CLASS_NAME, "option-text")
+            // Extract the option label (A, B, C, D)
+            const labelEl = card.querySelector('.option-label-box');
+            const label = labelEl ? labelEl.innerText.trim() : String.fromCharCode(65 + index);
 
-            // Try to find text within .option-text OR fallback to card text
+            // Extract the option text
             const textEl = card.querySelector('.option-text');
             const text = textEl ? textEl.innerText.trim() : card.innerText.trim();
 
             return {
                 index: index,
+                label: label,
                 text: text
             };
         });
@@ -33,14 +34,18 @@
     // === Core Logic ===
     function checkPage() {
         // 1. Detect Question
-        // Correct Selector from config.py: QUESTION_CLASS = "question"
-        const questionTextEl = document.querySelector('.question');
+        // The question is inside .question-box > .question > p
+        const questionBox = document.querySelector('.question-box');
 
-        if (questionTextEl && !window._processedQuestion) {
-            const questionText = questionTextEl.innerText.trim();
+        if (questionBox && !window._processedQuestion) {
+            const questionEl = questionBox.querySelector('.question p');
 
-            // Correct Selector from config.py: OPTION_CARD_CLASS = "option-card"
-            const optionCards = document.querySelectorAll('.option-card');
+            if (!questionEl) return;
+
+            const questionText = questionEl.innerText.trim();
+
+            // Get all option cards
+            const optionCards = questionBox.querySelectorAll('.option-card');
 
             if (optionCards.length > 0) {
                 log("Question found: " + questionText);
@@ -67,11 +72,18 @@
             if (optionCards[index]) {
                 optionCards[index].click();
 
-                // config.py: ACTION_BUTTON_CLASS = "selected-btn"
+                // After selecting option, click the Next Question button
                 setTimeout(() => {
-                    const submitBtn = document.querySelector('.selected-btn');
-                    if (submitBtn) submitBtn.click();
-                }, 500);
+                    const nextBtn = document.querySelector('.next-btn');
+                    if (nextBtn && !nextBtn.disabled) {
+                        log("Clicking Next Question button");
+                        nextBtn.click();
+                        // Reset processed question so next one can be detected
+                        window._processedQuestion = null;
+                    } else {
+                        log("Next button not found or disabled");
+                    }
+                }, 800);
             }
         },
 
