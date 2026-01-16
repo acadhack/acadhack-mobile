@@ -33,6 +33,7 @@ class _BrowserScreenState extends State<BrowserScreen> {
   // Floating Pill Position
   Offset _pillPos = Offset.zero;
   bool _isInit = true;
+  bool _urlLoaded = false;
 
   @override
   void initState() {
@@ -63,6 +64,24 @@ class _BrowserScreenState extends State<BrowserScreen> {
       final size = MediaQuery.of(context).size;
       _pillPos = Offset((size.width - 280) / 2, size.height - 100);
       _isInit = false;
+
+      // 3. Load Initial Page
+      _loadInitialPage();
+    }
+  }
+
+  void _loadInitialPage() {
+    if (_urlLoaded) return;
+    _urlLoaded = true;
+
+    if (_tempUser != null) {
+      print("First Load: Navigating to Login Page");
+      _controller.loadRequest(
+        Uri.parse('https://app.acadally.com/login/student'),
+      );
+    } else {
+      print("Subsequent Load: Navigating to Dashboard");
+      _controller.loadRequest(Uri.parse('https://app.acadally.com/student'));
     }
   }
 
@@ -125,22 +144,35 @@ class _BrowserScreenState extends State<BrowserScreen> {
 
             // 2. SPA/Redirect Fail-Safe: Re-inject logic on every URL change
             // This ensures injector.js is present after Next.js client-side navigation.
-            Future.delayed(const Duration(milliseconds: 500), () async {
-              await _injectScripts();
+            // Using multiple attempts with different delays for robustness.
+            for (var delay in [100, 500, 1500, 3000]) {
+              Future.delayed(Duration(milliseconds: delay), () async {
+                if (!mounted) return;
 
-              if (_isLoggingIn &&
-                  change.url!.contains('/login') &&
-                  _tempUser != null) {
-                print(
-                  "Detected Login Page via URL Change - Force Injecting...",
+                // Check if already injected before running script again
+                final check = await _controller.runJavaScriptReturningResult(
+                  "window._acadHackInitialized === true",
                 );
-                final u = jsonEncode(_tempUser);
-                final p = jsonEncode(_tempPass);
-                await _controller.runJavaScript(
-                  "if(window.AcadHackAuth) window.AcadHackAuth.login($u, $p);",
-                );
-              }
-            });
+
+                if (check != true && check != "true") {
+                  print(
+                    "AH_DEBUG: Injecting scripts at URL: ${change.url} (delay: ${delay}ms)",
+                  );
+                  await _injectScripts();
+                }
+
+                if (_isLoggingIn &&
+                    change.url!.contains('/login') &&
+                    _tempUser != null) {
+                  print("Login Page Check @ ${delay}ms");
+                  final u = jsonEncode(_tempUser);
+                  final p = jsonEncode(_tempPass);
+                  await _controller.runJavaScript(
+                    "if(window.AcadHackAuth) window.AcadHackAuth.login($u, $p);",
+                  );
+                }
+              });
+            }
           },
         ),
       )
@@ -156,10 +188,6 @@ class _BrowserScreenState extends State<BrowserScreen> {
           _controller.platform as AndroidWebViewController;
       await androidController.setMediaPlaybackRequiresUserGesture(false);
     }
-
-    _controller.loadRequest(
-      Uri.parse('https://app.acadally.com/login/student'),
-    );
   }
 
   Future<void> _injectScripts() async {
